@@ -30,26 +30,44 @@
   </div>
 
   <script>
-    const currencies = ["KES", "USD", "EUR", "JPY", "GBP", "NGN", "ZAR", "INR", "CNY", "BRL", "CAD"];
-    const fromSelect = document.getElementById("fromCurrency");
-    const toSelect = document.getElementById("toCurrency");
+    async function loadCurrencies() {
+      const res = await fetch("https://api.exchangerate.host/symbols");
+      const data = await res.json();
+      const symbols = data.symbols;
 
-    currencies.forEach(cur => {
-      fromSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
-      toSelect.innerHTML += `<option value="${cur}">${cur}</option>`;
-    });
+      const digitalCurrencies = {
+        BTC: { description: "Bitcoin", code: "BTC" },
+        ETH: { description: "Ethereum", code: "ETH" },
+        USDT: { description: "Tether", code: "USDT" },
+        XRP: { description: "Ripple", code: "XRP" },
+        LTC: { description: "Litecoin", code: "LTC" }
+      };
 
-    fromSelect.value = "KES";
-    toSelect.value = "JPY";
+      const allCurrencies = { ...symbols, ...digitalCurrencies };
+
+      const fromSelect = document.getElementById("fromCurrency");
+      const toSelect = document.getElementById("toCurrency");
+
+      for (const code in allCurrencies) {
+        const optionText = `${code} - ${allCurrencies[code].description}`;
+        fromSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+        toSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+      }
+
+      fromSelect.value = "KES";
+      toSelect.value = "USD";
+    }
 
     async function convertCurrency() {
       const amount = document.getElementById("amount").value;
-      const from = fromSelect.value;
-      const to = toSelect.value;
+      const from = document.getElementById("fromCurrency").value;
+      const to = document.getElementById("toCurrency").value;
       const res = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=${amount}`);
       const data = await res.json();
-      document.getElementById("result").innerText = `${amount} ${from} = ${data.result.toFixed(2)} ${to}`;
+      document.getElementById("result").innerText = `${amount} ${from} = ${data.result.toFixed(4)} ${to}`;
     }
+
+    loadCurrencies();
   </script>
 </body>
 </html>
