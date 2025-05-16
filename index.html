@@ -10,7 +10,9 @@
     .converter { background: white; padding: 2rem; border-radius: 8px; max-width: 400px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     label, select, input, button { display: block; width: 100%; margin-bottom: 1rem; }
     button { padding: 0.5rem; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    #result { margin-top: 1rem; font-weight: bold; }
+    #result-container { margin-top: 1rem; text-align: center; }
+    #result-label { font-size: 1rem; color: #555; }
+    #result-value { font-size: 1.8rem; color: #28a745; font-weight: bold; margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -26,36 +28,47 @@
       <select id="toCurrency"></select>
     </label>
     <button onclick="convertCurrency()">Convert</button>
-    <div id="result"></div>
+    <div id="result-container">
+      <div id="result-label"></div>
+      <div id="result-value"></div>
+    </div>
   </div>
 
   <script>
     async function loadCurrencies() {
-      const res = await fetch("https://api.exchangerate.host/symbols");
-      const data = await res.json();
-      const symbols = data.symbols;
-
-      const digitalCurrencies = {
-        BTC: { description: "Bitcoin", code: "BTC" },
-        ETH: { description: "Ethereum", code: "ETH" },
-        USDT: { description: "Tether", code: "USDT" },
-        XRP: { description: "Ripple", code: "XRP" },
-        LTC: { description: "Litecoin", code: "LTC" }
-      };
-
-      const allCurrencies = { ...symbols, ...digitalCurrencies };
-
       const fromSelect = document.getElementById("fromCurrency");
       const toSelect = document.getElementById("toCurrency");
 
-      for (const code in allCurrencies) {
-        const optionText = `${code} - ${allCurrencies[code].description}`;
-        fromSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
-        toSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
-      }
+      try {
+        const res = await fetch("https://api.exchangerate.host/symbols");
+        const data = await res.json();
+        const symbols = data.symbols;
 
-      fromSelect.value = "KES";
-      toSelect.value = "USD";
+        for (const code in symbols) {
+          const optionText = `${code} - ${symbols[code].description}`;
+          fromSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+          toSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+        }
+
+        const digitalCurrencies = {
+          BTC: "Bitcoin",
+          ETH: "Ethereum",
+          USDT: "Tether",
+          XRP: "Ripple",
+          LTC: "Litecoin"
+        };
+
+        for (const code in digitalCurrencies) {
+          const optionText = `${code} - ${digitalCurrencies[code]} (Digital)`;
+          fromSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+          toSelect.innerHTML += `<option value="${code}">${optionText}</option>`;
+        }
+
+        fromSelect.value = "KES";
+        toSelect.value = "USD";
+      } catch (error) {
+        console.error("Failed to load currencies:", error);
+      }
     }
 
     async function convertCurrency() {
@@ -64,7 +77,8 @@
       const to = document.getElementById("toCurrency").value;
       const res = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=${amount}`);
       const data = await res.json();
-      document.getElementById("result").innerText = `${amount} ${from} = ${data.result.toFixed(4)} ${to}`;
+      document.getElementById("result-label").innerText = `${amount} ${from} =`;
+      document.getElementById("result-value").innerText = `${data.result.toFixed(4)} ${to}`;
     }
 
     loadCurrencies();
